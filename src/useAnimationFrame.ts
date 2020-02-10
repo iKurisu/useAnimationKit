@@ -15,7 +15,7 @@ type Unsubscriber = () => void;
 const useAnimationFrame = (): [Subscriber, Unsubscriber] => {
   const animationId = useRef<number | null>(null);
 
-  const unsusbcribeAnimation: Unsubscriber = () => {
+  const unsubscribeAnimation: Unsubscriber = () => {
     if (!animationId.current) return;
 
     cancelAnimationFrame(animationId.current);
@@ -23,11 +23,11 @@ const useAnimationFrame = (): [Subscriber, Unsubscriber] => {
   };
 
   const subscribeAnimation: Subscriber = animation => {
-    if (animationId.current) unsusbcribeAnimation();
+    if (animationId.current) unsubscribeAnimation();
     animationId.current = requestAnimationFrame(animation);
   };
 
-  return [subscribeAnimation, unsusbcribeAnimation];
+  return [subscribeAnimation, unsubscribeAnimation];
 };
 
 export default useAnimationFrame;
