@@ -59,7 +59,7 @@ const mapProperties = (from: Properties, to: Properties): MappedProperties => {
           mapProperty(from[curr]!, to[curr]!)
         : mapStringProperties(from[curr] as string, to[curr] as string);
 
-    return { ...prev, ...{ [curr]: props } };
+    return { ...prev, [curr]: props };
   }, {});
 };
 
