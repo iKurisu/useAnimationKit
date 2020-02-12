@@ -1,7 +1,6 @@
 import {
   Properties,
   MappedProperty,
-  MappedProperties,
   KeywordPropertyNames,
   UnitlessPropertyNames,
 } from "./types";
@@ -10,9 +9,11 @@ import {
  * Maps a `KeywordProperty` or a `UnitlessProperty`.
  */
 const mapProperty = (
+  property: keyof Properties,
   from: number | string,
   to: number | string,
 ): MappedProperty => ({
+  property,
   initial: from,
   target: to,
 });
@@ -20,7 +21,11 @@ const mapProperty = (
 /**
  * Maps a `StringProperty`.
  */
-const mapStringProperties = (from: string, to: string): MappedProperty => {
+const mapStringProperties = (
+  property: keyof Properties,
+  from: string,
+  to: string,
+): MappedProperty => {
   const initial = from.match(/-?\d+(\.\d+)?(?!d)/gi);
   const target = to.match(/-?\d+(\.\d+)?(?!d)/gi);
 
@@ -29,6 +34,7 @@ const mapStringProperties = (from: string, to: string): MappedProperty => {
   }
 
   return {
+    property,
     initial: initial.map(parseFloat),
     target: target.map(parseFloat),
     str: from,
@@ -40,7 +46,7 @@ const mapStringProperties = (from: string, to: string): MappedProperty => {
  * @param from The initial properties.
  * @param to The target properties.
  */
-const mapProperties = (from: Properties, to: Properties): MappedProperties => {
+const mapProperties = (from: Properties, to: Properties): MappedProperty[] => {
   const properties = Object.keys(from) as (keyof Properties)[];
 
   properties.forEach(property => {
@@ -49,17 +55,17 @@ const mapProperties = (from: Properties, to: Properties): MappedProperties => {
     }
   });
 
-  return properties.reduce((prev: MappedProperties, curr) => {
-    // No non null assertion rules is disabled since neither from[curr] nor
-    // to[curr] can be null
+  return properties.map(prop => {
+    // No non null assertion rules is disabled since neither from[prop] nor
+    // to[prop] can be null
 
     const props =
-      curr in KeywordPropertyNames || curr in UnitlessPropertyNames
+      prop in KeywordPropertyNames || prop in UnitlessPropertyNames
         ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          mapProperty(from[curr]!, to[curr]!)
-        : mapStringProperties(from[curr] as string, to[curr] as string);
+          mapProperty(prop, from[prop]!, to[prop]!)
+        : mapStringProperties(prop, from[prop] as string, to[prop] as string);
 
-    return { ...prev, [curr]: props };
+    return props;
   }, {});
 };
 

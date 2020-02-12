@@ -1,19 +1,21 @@
 import stringifyProperties from "../../src/useTransition/stringify";
-import { Properties, MappedProperties } from "../../src/useTransition/types";
+import { Properties, MappedProperty } from "../../src/useTransition/types";
 
 describe("stringifyProperties", (): void => {
   it("turns an object into a string property", (): void => {
-    const properties = {
-      transform: {
+    const properties: MappedProperty[] = [
+      {
+        property: "transform",
         initial: [0],
         target: [100],
         str: "translateX(0%)",
       },
-      opacity: {
+      {
+        property: "opacity",
         initial: 1,
         target: 0,
       },
-    };
+    ];
 
     const stringifiedProperties: Properties = {
       transform: "translateX(0%)",
@@ -35,13 +37,14 @@ describe("stringifyProperties", (): void => {
   });
 
   it("handles multiple values", (): void => {
-    const properties: MappedProperties = {
-      transform: {
+    const properties: MappedProperty[] = [
+      {
+        property: "transform",
         initial: [0, 1],
         target: [100, 2],
         str: "translateX(0%) scaleX(1)",
       },
-    };
+    ];
 
     const stringifiedProperties: Properties = {
       transform: "translateX(0%) scaleX(1)",
@@ -61,18 +64,20 @@ describe("stringifyProperties", (): void => {
   });
 
   it("stringifies width, top, bottom, etc. properties", (): void => {
-    const mappedProps: MappedProperties = {
-      width: {
+    const mappedProps: MappedProperty[] = [
+      {
+        property: "width",
         initial: [256],
         target: [100],
         str: "256px",
       },
-      top: {
+      {
+        property: "top",
         initial: [5],
         target: [10],
         str: "5%",
       },
-    };
+    ];
 
     const from = { width: "256px", top: "5%" };
     const to = { width: "100px", top: "10%" };

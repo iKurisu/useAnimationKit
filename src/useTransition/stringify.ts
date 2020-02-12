@@ -1,13 +1,14 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   Properties,
-  MappedProperties,
   MappedProperty,
   KeywordPropertyNames,
   UnitlessPropertyNames,
 } from "./types";
 import { applyEase } from "./utils";
 
+/**
+ * Stringifies `KeywordProperties`.
+ */
 const stringifyKeyword = (
   mappedProperty: MappedProperty,
   stage: number,
@@ -17,6 +18,9 @@ const stringifyKeyword = (
     : (mappedProperty.target as string);
 };
 
+/**
+ * Stringifies `UnitlessProperties`.
+ */
 const stringifyUnitless = (
   mappedProperty: MappedProperty,
   stage: number,
@@ -36,11 +40,16 @@ const replaceFn = (
     applyEase(initial[index], target[index++], stage).toString();
 };
 
+/**
+ * Stringifies `StringProperties`.
+ */
 const stringifyString = (
   mappedProperty: MappedProperty,
   stage: number,
 ): string => {
   const { initial, target, str } = mappedProperty;
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return str!.replace(
     /-?\d+(\.\d+)?(?!d)/gi,
     replaceFn(initial as number[], target as number[], stage),
@@ -48,25 +57,25 @@ const stringifyString = (
 };
 
 /**
- * Stringifies the given `MappedProperties`.
- * @param mappedProperties An object of `MappedProperty`.
- * @param ease The transition's stage.
+ * Stringifies the given array of `MappedProperty`.
+ * @param mappedProperties An array of `MappedProperty`.
+ * @param stage The transition's stage.
  */
 const stringifyProperties = (
-  mappedProperties: MappedProperties,
+  mappedProperties: MappedProperty[],
   stage: number,
 ): Properties => {
-  const properties = Object.keys(mappedProperties) as (keyof Properties)[];
+  return mappedProperties.reduce((prev, mappedProperty) => {
+    const { property } = mappedProperty;
 
-  return properties.reduce((prev, curr) => {
     const props =
-      curr in KeywordPropertyNames
-        ? stringifyKeyword(mappedProperties[curr]!, stage)
-        : curr in UnitlessPropertyNames
-        ? stringifyUnitless(mappedProperties[curr]!, stage)
-        : stringifyString(mappedProperties[curr]!, stage);
+      property in KeywordPropertyNames
+        ? stringifyKeyword(mappedProperty, stage)
+        : property in UnitlessPropertyNames
+        ? stringifyUnitless(mappedProperty, stage)
+        : stringifyString(mappedProperty, stage);
 
-    return { ...prev, [curr]: props };
+    return { ...prev, [property]: props };
   }, {});
 };
 

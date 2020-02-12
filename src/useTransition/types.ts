@@ -39,25 +39,8 @@ export type Properties = KeywordProperties &
   StringProperties;
 
 export interface MappedProperty {
+  property: keyof Properties;
   initial: string | number | number[];
   target: string | number | number[];
   str?: string;
-}
-
-export interface MappedProperties {
-  opacity?: MappedProperty;
-  transform?: MappedProperty;
-  height?: MappedProperty;
-  width?: MappedProperty;
-  top?: MappedProperty;
-  left?: MappedProperty;
-  right?: MappedProperty;
-  bottom?: MappedProperty;
-  marginTop?: MappedProperty;
-  marginLeft?: MappedProperty;
-  marginRight?: MappedProperty;
-  marginBottom?: MappedProperty;
-  strokeDashoffset?: MappedProperty;
-  zIndex?: MappedProperty;
-  visibility?: MappedProperty;
 }
