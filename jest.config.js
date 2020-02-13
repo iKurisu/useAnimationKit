@@ -6,4 +6,5 @@ module.exports = {
     "^.+\\.tsx?$": "ts-jest",
   },
   testRegex: "test",
+  setupFilesAfterEnv: ["./setupTest.ts", "./setupDOM.ts"],
 };
