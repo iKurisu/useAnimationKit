@@ -8,15 +8,18 @@ describe("useCustomScroll", (): void => {
     const element = useRef<HTMLDivElement | null>(null);
     const listener = useRef<HTMLDivElement | null>(null);
 
-    const [scroll, subscribe, unsubscribe] = useCustomScroll(element, {
-      distance: 100,
-      duration: 0,
-      timing: [0, 0, 0.1, 1],
-    });
+    const [scroll, subscribe, unsubscribe, manualScroll] = useCustomScroll(
+      element,
+      {
+        distance: 100,
+        duration: 0,
+        timing: [0, 0, 0.1, 1],
+      },
+    );
 
     const scrollContent = (scroll: number): void => {
       if (listener.current) {
-        listener.current.style.transform = `translateY(${100 + scroll}px)`;
+        listener.current.style.transform = `translateY(${100 - scroll}px)`;
       }
     };
 
@@ -26,6 +29,8 @@ describe("useCustomScroll", (): void => {
       unsubscribe(scrollContent);
     };
 
+    const scrollManually = (): void => manualScroll({ to: 200, duration: 0 });
+
     return (
       <div className="scroll" {...scroll} onClick={unsubscribeListener}>
         <div
@@ -33,6 +38,7 @@ describe("useCustomScroll", (): void => {
           ref={element}
           style={{ transform: "translateY(0)" }}
         >
+          <div className="manual-scroller" onClick={scrollManually} />
           <div className="scroll-listener" ref={listener} />
         </div>
       </div>
@@ -86,5 +92,33 @@ describe("useCustomScroll", (): void => {
     scroll.simulate("wheel", { deltaY: 100 });
 
     expectListenerTransformToBe("");
+  });
+
+  it("scrolls correctly through manual scroll", (): void => {
+    const manualScroller = wrapper.find(".manual-scroller");
+
+    manualScroller.simulate("click");
+
+    expectContentTransformToBe("translateY(-200px)");
+  });
+
+  it("throws a custom error when the ref passed has not been asigned an html element", (): void => {
+    jest.spyOn(console, "error").mockImplementation((): void => undefined);
+
+    const WithoutRef = (): JSX.Element => {
+      const element = useRef(null);
+
+      const [scroll] = useCustomScroll(element, { distance: 100, duration: 0 });
+
+      return <div {...scroll} />;
+    };
+
+    const mountComponent = (): ReactWrapper => mount(<WithoutRef />);
+
+    expect(mountComponent).toThrowError(
+      "The given ref does not have an html element assigned.",
+    );
+
+    jest.restoreAllMocks();
   });
 });
