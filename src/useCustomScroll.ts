@@ -5,6 +5,7 @@ import useAnimationFrame from "./useAnimationFrame";
 import useFrame from "./useFrame";
 import useListeners from "./useListeners";
 import { CubicBezier } from "./types";
+import usePrevTouches from "./usePrevTouches";
 
 interface ScrollConfig {
   distance: number;
@@ -50,20 +51,20 @@ const getValue = (str: string): number => {
 /** Makes an element scrollable. */
 const useCustomScroll = (
   ref: RefObject<HTMLElement>,
-  {
+  config: ScrollConfig,
+): [EventHandlers, Subscriber, Unsubscriber, ManualScroller] => {
+  const {
     distance,
     duration,
     timing = defaultTiming,
-    limitMod: {
-      top: limitModTop = (): number => 0,
-      bottom: limitModBottom = (): number => 0,
-    } = {},
+    limitMod = {},
     withRouter = false,
     preserveScroll = false,
-  }: ScrollConfig,
-): [EventHandlers, Subscriber, Unsubscriber, ManualScroller] => {
+  } = config;
+
   const [subscribeAnimation, unsuscribeAnimation] = useAnimationFrame();
   const [getFrame, increaseFrame, resetFrame] = useFrame();
+  const [getTouchOffset, setPrevTouch] = usePrevTouches();
   const [
     subscribeListeners,
     unsubscribeListeners,
@@ -72,14 +73,22 @@ const useCustomScroll = (
 
   const location = withRouter ? useLocation() : { pathname: "/" };
 
-  const prevTouches = useRef([0, 0]);
   const target = useRef(0);
   const topLimit = useRef(0);
   const bottomLimit = useRef(0);
 
+  /**
+   * Returns the current node if it exists. Otherwise, it throws an error.
+   */
   const getCurrentNode = (): HTMLElement => {
+    if (!ref.current) {
+      throw Error("The given ref does not have an html element assigned.");
+    }
+
     return ref.current as HTMLElement;
   };
+
+  const calcTopLimit = (): number => topLimit.current;
 
   const calcBottomLimit = (): number => {
     const { clientHeight } = getCurrentNode();
@@ -88,62 +97,54 @@ const useCustomScroll = (
   };
 
   const limit = (x: number): number => {
+    const topLimit = calcTopLimit();
     const bottomLimit = calcBottomLimit();
 
-    return x > 0 ? 0 : x < -bottomLimit ? -bottomLimit : x;
+    return x < topLimit ? topLimit : x > bottomLimit ? bottomLimit : x;
   };
 
   const setTarget = (x: number): void => {
     target.current = x;
   };
 
-  const increaseTarget = (x: number): void => {
-    setTarget(target.current + x);
-  };
-
-  const resetPrevTouches = (x: number): void => {
-    prevTouches.current = [x, x];
-  };
-
-  const setPrevTouch = (x: number): void => {
-    prevTouches.current = [prevTouches.current[1], x];
-  };
+  const increaseTarget = (x: number): void => setTarget(target.current + x);
 
   useEffect(() => {
+    const { top = (): number => 0, bottom = (): number => 0 } = limitMod;
+
     if (!preserveScroll) {
       getCurrentNode().style.transform = "translateY(0)";
       target.current = 0;
     }
 
-    topLimit.current = limitModTop();
-    bottomLimit.current = limitModBottom();
+    topLimit.current = top();
+    bottomLimit.current = bottom();
   }, [location.pathname]);
 
   /** Performs a scroll-like animation to the given position. */
-  const manualScroll = async ({
+  const manualScroll = ({
     to,
     duration,
     timing = defaultTiming,
   }: ManualScrollConfig): Promise<void> =>
     new Promise(res => {
       const currentNode = getCurrentNode();
-      const from = limit(getValue(currentNode.style.transform));
+      const from = limit(-getValue(currentNode.style.transform));
       const maxFrames = (duration / 1000) * 60;
       const easing = BezierEasing(...timing);
-      const bottomLimit = calcBottomLimit();
 
-      setTarget(-to);
+      setTarget(to);
       resetFrame();
 
       const animation = (): void => {
         const currentFrame = getFrame();
 
         const ease = maxFrames === 0 ? 1 : currentFrame / maxFrames;
-        const value = limit(-(from + to) * easing(ease) + from);
+        const value = limit((from + to) * easing(ease) - from);
 
-        callListeners(value, -bottomLimit);
+        callListeners(value, bottomLimit);
 
-        currentNode.style.transform = `translateY(${value}px)`;
+        currentNode.style.transform = `translateY(${-value}px)`;
 
         if (currentFrame === maxFrames) {
           resetFrame();
@@ -162,20 +163,21 @@ const useCustomScroll = (
   const maxFrames = (duration / 1000) * 60;
 
   const wheel = (e: WheelEvent<HTMLElement>): void => {
-    const currentNode = getCurrentNode();
     const { current: currentTarget } = target;
-    const from = limit(getValue(currentNode.style.transform));
+    const currentNode = getCurrentNode();
 
+    const from = limit(-getValue(currentNode.style.transform));
+    const topLimit = calcTopLimit();
     const bottomLimit = calcBottomLimit();
 
     if (
-      (currentTarget > 0 && e.deltaY > 0) ||
-      (currentTarget < -bottomLimit && e.deltaY < 0)
+      (currentTarget > topLimit && e.deltaY > 0) ||
+      (currentTarget < bottomLimit && e.deltaY < 0)
     ) {
       setTarget(from);
     }
 
-    increaseTarget(e.deltaY < 0 ? distance : -distance);
+    increaseTarget(e.deltaY > 0 ? distance : -distance);
     resetFrame();
 
     const animation = (): void => {
@@ -184,9 +186,9 @@ const useCustomScroll = (
       const ease = maxFrames === 0 ? 1 : currentFrame / maxFrames;
       const value = limit((target.current - from) * easing(ease) + from);
 
-      callListeners(value, -bottomLimit);
+      callListeners(value, bottomLimit);
 
-      currentNode.style.transform = `translateY(${value}px)`;
+      currentNode.style.transform = `translateY(${-value}px)`;
 
       if (currentFrame === maxFrames) {
         resetFrame();
@@ -203,25 +205,25 @@ const useCustomScroll = (
   const touchStart = (e: TouchEvent<HTMLElement>): void => {
     unsuscribeAnimation();
     resetFrame();
-    resetPrevTouches(e.touches[0].clientY);
+    setPrevTouch(e.touches[0].clientY);
   };
 
   const touchMove = (e: TouchEvent<HTMLElement>): void => {
+    setPrevTouch(e.touches[0].clientY);
+
     const currentNode = getCurrentNode();
-    const from = getValue(currentNode.style.transform);
-    const value = limit(from - (prevTouches.current[1] - e.touches[0].clientY));
+    const from = -getValue(currentNode.style.transform);
+    const value = limit(from + getTouchOffset());
     const bottomLimit = calcBottomLimit();
 
-    callListeners(value, -bottomLimit);
+    callListeners(value, bottomLimit);
 
-    currentNode.style.transform = `translateY(${value}px)`;
-
-    setPrevTouch(e.touches[0].clientY);
+    currentNode.style.transform = `translateY(${-value}px)`;
   };
 
   const touchEnd = (e: TouchEvent<HTMLElement>): void => {
     const currentNode = getCurrentNode();
-    const from = getValue(currentNode.style.transform);
+    const from = -getValue(currentNode.style.transform);
     const bottomLimit = calcBottomLimit();
 
     e.persist();
@@ -230,12 +232,12 @@ const useCustomScroll = (
       const currentFrame = getFrame();
 
       const ease = maxFrames === 0 ? 1 : currentFrame / maxFrames;
-      const d = prevTouches.current[0] - prevTouches.current[1];
-      const value = limit(from - d * 60 * easing(ease));
+      const d = getTouchOffset();
+      const value = limit(from + d * 60 * easing(ease));
 
-      callListeners(value, -bottomLimit);
+      callListeners(value, bottomLimit);
 
-      currentNode.style.transform = `translateY(${limit(value)}px)`;
+      currentNode.style.transform = `translateY(${-value}px)`;
 
       if (currentFrame === maxFrames) {
         resetFrame();
