@@ -102,6 +102,50 @@ describe("useCustomScroll", (): void => {
     expectContentTransformToBe("translateY(-200px)");
   });
 
+  it("handles limits", (): void => {
+    const WithLimits = (): JSX.Element => {
+      const element = useRef(null);
+
+      const [scroll] = useCustomScroll(element, {
+        distance: 10000,
+        duration: 0,
+        limitMod: {
+          top: (): number => -200,
+          bottom: (): number => window.innerHeight + 600,
+        },
+      });
+
+      return (
+        <div className="scroll" {...scroll}>
+          <div
+            className="scroll-content"
+            ref={element}
+            style={{ transform: "translateY(0)" }}
+          />
+        </div>
+      );
+    };
+
+    const wrapper = mount(<WithLimits />);
+    wrapper.find(".scroll").simulate("wheel", { deltaY: -100 });
+
+    expect(
+      getComputedStyle(
+        wrapper.find(".scroll-content").getDOMNode(),
+      ).getPropertyValue("transform"),
+    ).toBe("translateY(200px)");
+
+    wrapper.find(".scroll").simulate("wheel", { deltaY: 100 });
+    wrapper.find(".scroll").simulate("wheel", { deltaY: 100 });
+    wrapper.find(".scroll").simulate("wheel", { deltaY: 100 });
+
+    expect(
+      getComputedStyle(
+        wrapper.find(".scroll-content").getDOMNode(),
+      ).getPropertyValue("transform"),
+    ).toBe("translateY(-3100px)");
+  });
+
   it("throws a custom error when the ref passed has not been asigned an html element", (): void => {
     jest.spyOn(console, "error").mockImplementation((): void => undefined);
 
