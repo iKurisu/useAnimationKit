@@ -6,8 +6,7 @@ import { getProgress, toFrames } from "./useTransition/utils";
 import { Properties } from "./useTransition/types";
 import useAnimationFrame from "./useAnimationFrame";
 import useFrame from "./useFrame";
-
-type CubicBezier = [number, number, number, number];
+import { CubicBezier } from "./types";
 
 export interface TransitionProps {
   from: Properties;
