@@ -133,7 +133,7 @@ describe("useCustomScroll", (): void => {
     expectContentTransformToBe(wrapper, "translateY(-200px)");
   });
 
-  it.only("handles limits", (): void => {
+  it("handles limits", (): void => {
     const wrapper = mount(<WithLimits />);
     const scroll = wrapper.find(".scroll");
 
