@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { mount, ReactWrapper } from "enzyme";
 import useCustomScroll from "../src/useCustomScroll";
-import "../src/__mocks__/clientHeight";
+import "./__mocks__/clientHeight";
 
 describe("useCustomScroll", (): void => {
   const TestComponent = (): JSX.Element => {

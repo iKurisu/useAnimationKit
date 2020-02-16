@@ -4,7 +4,14 @@ import BezierEasing from "bezier-easing";
 import useAnimationFrame from "./useAnimationFrame";
 import useFrame from "./useFrame";
 import useListeners from "./useListeners";
-import { CubicBezier } from "./types";
+import {
+  CubicBezier,
+  Listener,
+  Subscriber,
+  Unsubscriber,
+  ManualScroller,
+  ManualScrollConfig,
+} from "./types";
 import usePrevTouches from "./usePrevTouches";
 
 interface ScrollConfig {
@@ -19,12 +26,6 @@ interface ScrollConfig {
   preserveScroll?: boolean;
 }
 
-interface ManualScrollConfig {
-  to: number;
-  duration: number;
-  timing?: CubicBezier;
-}
-
 type TouchEvents = "onTouchStart" | "onTouchMove" | "onTouchEnd";
 
 type EventHandlers = {
@@ -32,13 +33,6 @@ type EventHandlers = {
 } & {
   onWheel: (e: WheelEvent<HTMLElement>) => void;
 };
-
-/** The function that will get called when the user scrolls. */
-type Listener = (scroll: number, max: number) => void;
-type Subscriber = (listener: Listener) => void;
-type Unsubscriber = (listener: Listener) => void;
-
-type ManualScroller = (config: ManualScrollConfig) => void;
 
 const defaultTiming: CubicBezier = [0, 0, 0.2, 1];
 
