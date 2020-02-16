@@ -1,5 +1,5 @@
 {
-  "name": "useanimationkit",
+  "name": "use-animation-kit",
   "version": "1.0.0",
   "description": "A collection of hooks to create modern animations.",
   "main": "lib/index.js",
