@@ -5,7 +5,7 @@ import {
   ManualScroller,
   Listener,
   ManualScrollConfig,
-} from "src/types";
+} from "../types";
 
 interface ScrollContext {
   subscriber: [Subscriber, Unsubscriber];
