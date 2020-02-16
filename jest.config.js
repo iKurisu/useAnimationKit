@@ -5,6 +5,7 @@ module.exports = {
   transform: {
     "^.+\\.tsx?$": "ts-jest",
   },
-  testRegex: "test",
+  testMatch: ["<rootDir>/test/**/*.test.(ts|tsx)"],
+  testPathIgnorePatterns: ["/node_modules/", "/lib/"],
   setupFilesAfterEnv: ["./setupTest.ts", "./setupDOM.ts"],
 };
