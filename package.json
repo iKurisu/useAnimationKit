@@ -1,6 +1,6 @@
 {
   "name": "use-animation-kit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A collection of hooks to create modern animations.",
   "main": "lib/index.js",
   "module": "es/index.js",
